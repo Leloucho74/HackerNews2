@@ -1,25 +1,28 @@
 {% extends 'base.html.twig' %}
 
-{% block body_id 'blog_index' %}
+{% block body_id 'blog_ask' %}
 
 
 
 {% block main %}
     {% for post in paginator.results %}
-        <article class="post">
-            <h4>
-                <a style="color: #000000" href="{{ post.link }}">
-                    {{ post.title }}
-                </a>
-            </h4>
-            <p class="post-metadata">
-                <span class="metadata"><i
-                            class="fa fa-calendar"></i> {{ post.publishedAt|format_datetime('long', 'medium', '', 'UTC') }}</span>
-                <span class="metadata"><i class="fa fa-user"></i> {{ post.author.fullName }}</span>
-            </p>
+        String i = "?";
+        {% if post.title.includes(i) %}
+            <article class="post">
+                <h2>
+                    <a style="color: #000000" href="{{ post.link }}">
+                        {{ post.title }}
+                    </a>
+                </h2>
+                <p class="post-metadata">
+                    <span class="metadata"><i
+                                class="fa fa-calendar"></i> {{ post.publishedAt|format_datetime('long', 'medium', '', 'UTC') }}</span>
+                    <span class="metadata"><i class="fa fa-user"></i> {{ post.author.fullName }}</span>
+                </p>
 
 
-        </article>
+            </article>
+        {% endif %}
     {% else %}
         <div class="well">{{ 'post.no_posts_found'|trans }}</div>
     {% endfor %}

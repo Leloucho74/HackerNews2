@@ -3,10 +3,11 @@
 {% block body_id 'blog_post_show' %}
 
 {% block main %}
-    <h1>{{ post.title }}</h1>
+    <h1 style="color: black">{{ post.title }}</h1>
 
     <p class="post-metadata">
-        <span class="metadata"><i class="fa fa-calendar"></i> {{ post.publishedAt|format_datetime('long', 'medium', '', 'UTC') }}</span>
+        <span class="metadata"><i
+                    class="fa fa-calendar"></i> {{ post.publishedAt|format_datetime('long', 'medium', '', 'UTC') }}</span>
         <span class="metadata"><i class="fa fa-user"></i> {{ post.author.fullName }}</span>
     </p>
 
@@ -14,18 +15,13 @@
 
     {{ include('blog/_post_tags.html.twig') }}
 
-    <div id="post-add-comment" class="well">
-        {# The 'IS_AUTHENTICATED_FULLY' role ensures that the user has entered
-        their credentials (login + password) during this session. If they
-        are automatically logged via the 'Remember Me' functionality, they won't
-        be able to add a comment.
-        See https://symfony.com/doc/current/security/remember_me.html#forcing-the-user-to-re-authenticate-before-accessing-certain-resources
-        #}
+    <div style="background-color: #f6f6ef" id="post-add-comment" class="well">
+
         {% if is_granted('IS_AUTHENTICATED_FULLY') %}
             {{ render(controller('App\\Controller\\BlogController::commentForm', {'id': post.id})) }}
         {% else %}
-            <p>
-                <a class="btn btn-success" href="{{ path('security_login', {'redirect_to': app.request.pathInfo}) }}">
+            <p style="background-color: #f6f6ef">
+                <a class="btn btn-primary" href="{{ path('security_login', {'redirect_to': app.request.pathInfo}) }}">
                     <i class="fa fa-sign-in" aria-hidden="true"></i> {{ 'action.sign_in'|trans }}
                 </a>
                 {{ 'post.to_publish_a_comment'|trans }}
@@ -42,9 +38,7 @@
             <a name="comment_{{ comment.id }}"></a>
             <h4 class="col-sm-3">
                 <strong>{{ comment.author.fullName }}</strong> {{ 'post.commented_on'|trans }}
-                {# it's not mandatory to set the timezone in localizeddate(). This is done to
-                   avoid errors when the 'intl' PHP extension is not available and the application
-                   is forced to use the limited "intl polyfill", which only supports UTC and GMT #}
+
                 <strong>{{ comment.publishedAt|format_datetime('medium', 'short', '', 'UTC') }}</strong>
             </h4>
             <div class="col-sm-9">
@@ -67,9 +61,7 @@
         </div>
     {% endif %}
 
-    {# the parent() function includes the contents defined by the parent template
-      ('base.html.twig') for this block ('sidebar'). This is a very convenient way
-      to share common contents in different templates #}
+
     {{ parent() }}
 
     {{ show_source_code(_self) }}

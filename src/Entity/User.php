@@ -36,21 +36,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string')]
+    #[ORM\Column(type: 'string', nullable: true)]
     #[Assert\NotBlank]
     private ?string $fullName = null;
 
     #[ORM\Column(type: 'string', unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 50)]
-    private ?string $username = null;
+    private ?string $username = "";
 
-    #[ORM\Column(type: 'string', unique: true)]
+
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     #[Assert\Email]
     private ?string $email = null;
 
     #[ORM\Column(type: 'string')]
     private ?string $password = null;
+
 
     #[ORM\Column(type: 'json')]
     private array $roles = [];
@@ -161,4 +163,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // add $this->salt too if you don't use Bcrypt or Argon2i
         [$this->id, $this->username, $this->password] = $data;
     }
+
+
 }

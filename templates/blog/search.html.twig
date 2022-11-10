@@ -5,6 +5,10 @@
     {{ encore_entry_script_tags('search') }}
 {% endblock %}
 
+{% block title %}
+    Search | {{ parent() }}
+{% endblock title %}
+
 {% block body_id 'blog_search' %}
 
 {% block main %}
@@ -26,7 +30,4 @@
 {% endblock %}
 
 {% block sidebar %}
-    {{ parent() }}
-
-    {{ show_source_code(_self) }}
 {% endblock %}
