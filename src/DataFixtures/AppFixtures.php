@@ -40,14 +40,13 @@ class AppFixtures extends Fixture
 
     private function loadUsers(ObjectManager $manager): void
     {
-        foreach ($this->getUserData() as [$fullname, $username, $password, $email, $roles, $description]) {
+        foreach ($this->getUserData() as [$fullname, $username, $password, $email, $roles]) {
             $user = new User();
             $user->setFullName($fullname);
             $user->setUsername($username);
             $user->setPassword($this->passwordHasher->hashPassword($user, $password));
             $user->setEmail($email);
             $user->setRoles($roles);
-
 
             $manager->persist($user);
             $this->addReference($username, $user);
@@ -85,7 +84,7 @@ class AppFixtures extends Fixture
                 $comment = new Comment();
                 $comment->setAuthor($this->getReference('john_user'));
                 $comment->setContent($this->getRandomText(random_int(255, 512)));
-                $comment->setPublishedAt(new DateTime('now + ' . $i . 'seconds'));
+                $comment->setPublishedAt(new DateTime('now + '.$i.'seconds'));
 
                 $post->addComment($comment);
             }
@@ -131,7 +130,7 @@ class AppFixtures extends Fixture
                 $this->slugger->slug($title)->lower(),
                 $this->getRandomText(),
                 $this->getPostContent(),
-                new DateTime('now - ' . $i . 'days'),
+                new DateTime('now - '.$i.'days'),
                 // Ensure that the first post is written by Jane Doe to simplify tests
                 $this->getReference(['jane_admin', 'tom_admin'][0 === $i ? 0 : random_int(0, 1)]),
                 $this->getRandomTags(),

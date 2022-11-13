@@ -65,44 +65,44 @@ class BlogController extends AbstractController
      * to constraint the HTTP methods each controller responds to (by default
      * it responds to all methods).
      */
-    #[Route('/new', methods: ['GET', 'POST'], name: 'admin_post_new')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $post = new Post();
-        $post->setAuthor($this->getUser());
-
-        // See https://symfony.com/doc/current/form/multiple_buttons.html
-        $form = $this->createForm(PostType::class, $post)
-            ->add('saveAndCreateNew', SubmitType::class);
-
-        $form->handleRequest($request);
-
-        // the isSubmitted() method is completely optional because the other
-        // isValid() method already checks whether the form is submitted.
-        // However, we explicitly add it to improve code readability.
-        // See https://symfony.com/doc/current/forms.html#processing-forms
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($post);
-            $entityManager->flush();
-
-            // Flash messages are used to notify the user about the result of the
-            // actions. They are deleted automatically from the session as soon
-            // as they are accessed.
-            // See https://symfony.com/doc/current/controller.html#flash-messages
-            $this->addFlash('success', 'post.created_successfully');
-
-            if ($form->get('saveAndCreateNew')->isClicked()) {
-                return $this->redirectToRoute('admin_post_new');
-            }
-
-            return $this->redirectToRoute('admin_post_index');
-        }
-
-        return $this->render('admin/blog/new.html.twig', [
-            'post' => $post,
-            'form' => $form->createView(),
-        ]);
-    }
+//    #[Route('/new', methods: ['GET', 'POST'], name: 'admin_post_new')]
+//    public function new(Request $request, EntityManagerInterface $entityManager): Response
+//    {
+//        $post = new Post();
+//        $post->setAuthor($this->getUser());
+//
+//        // See https://symfony.com/doc/current/form/multiple_buttons.html
+//        $form = $this->createForm(PostType::class, $post)
+//            ->add('saveAndCreateNew', SubmitType::class);
+//
+//        $form->handleRequest($request);
+//
+//        // the isSubmitted() method is completely optional because the other
+//        // isValid() method already checks whether the form is submitted.
+//        // However, we explicitly add it to improve code readability.
+//        // See https://symfony.com/doc/current/forms.html#processing-forms
+//        if ($form->isSubmitted() && $form->isValid()) {
+//            $entityManager->persist($post);
+//            $entityManager->flush();
+//
+//            // Flash messages are used to notify the user about the result of the
+//            // actions. They are deleted automatically from the session as soon
+//            // as they are accessed.
+//            // See https://symfony.com/doc/current/controller.html#flash-messages
+//            $this->addFlash('success', 'post.created_successfully');
+//
+//            if ($form->get('saveAndCreateNew')->isClicked()) {
+//                return $this->redirectToRoute('admin_post_new');
+//            }
+//
+//            return $this->redirectToRoute('admin_post_index');
+//        }
+//
+//        return $this->render('admin/blog/new.html.twig', [
+//            'post' => $post,
+//            'form' => $form->createView(),
+//        ]);
+//    }
 
     /**
      * Finds and displays a Post entity.

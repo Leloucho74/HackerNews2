@@ -16,10 +16,13 @@ use App\Entity\Post;
 use App\Event\CommentCreatedEvent;
 use App\Form\CommentType;
 use App\Form\PostType;
+use App\Repository\CommentRepository;
 use App\Repository\PostRepository;
 use App\Repository\TagRepository;
 use App\Security\PostVoter;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Exception;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -29,9 +32,9 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\Common\Collections\ArrayCollection;
 use const ENT_COMPAT;
 use const ENT_HTML5;
-
 
 /**
  * Controller used to manage blog contents in the public part of the site.
@@ -49,48 +52,69 @@ class BlogController extends AbstractController
      * See https://symfony.com/doc/current/routing.html#special-parameters
      */
     #[Route('/', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_index')]
+    #[Route('/new', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_index_2')]
     #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_rss')]
     #[Route('/page/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_index_paginated')]
     #[Cache(smaxage: 10)]
     public function index(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
     {
         $tag = null;
+        //dd($request->query);
         if ($request->query->has('tag')) {
             $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
         }
-        $latestPosts = $posts->findLatest($page, $tag);
+        $latestPosts = null;
+
+        if(!$latestPosts){
+            $latestPosts = $posts->findNewest($page, $tag);
+        }
 
         // Every template name also has two extensions that specify the format and
         // engine for that template.
         // See https://symfony.com/doc/current/templates.html#template-naming
-        return $this->render('blog/index.' . $_format . '.twig', [
+        return $this->render('blog/index.'.$_format.'.twig', [
             'paginator' => $latestPosts,
             'tagName' => $tag?->getName(),
         ]);
     }
 
-    /**
-     * NOTE: For standard formats, Symfony will also automatically choose the best
-     * Content-Type header for the response.
-     *
-     * See https://symfony.com/doc/current/routing.html#special-parameters
-     */
-    #[Route('/', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_ask')]
-    #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_rss')]
-    #[Route('/page/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_ask_paginated')]
+    #[Route('/newest', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_newest_index')]
+    #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_newest_rss')]
+    #[Route('/page/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_newest_paginated')]
     #[Cache(smaxage: 10)]
-    public function ask_(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
+    public function newestPosts(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
     {
         $tag = null;
+
         if ($request->query->has('tag')) {
             $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
         }
-        $latestPosts = $posts->findLatest($page, $tag);
+        $latestPosts = null;
+        if ($request->query->has('type')) {
+            $type = '';
+            switch ($request->query->get('type')){
+                case 'ask':
+                    $type = 'ask';
+                    //$latestPosts = $posts->findBy(['type' => $type]);
+                    $latestPosts = $posts->findByType($page, $tag, $type);
+                    break;
+                case 'url':
+                    $type = 'url';
+                    //$latestPosts = $posts->findBy(['type' => $type]);
+                    $latestPosts = $posts->findByType($page, $tag, $type);
+                    break;
+                default:
+                    $latestPosts = $posts->findLatest($page, $tag);
+            }
+        }
+        if(!$latestPosts){
+            $latestPosts = $posts->findLatest($page, $tag);
+        }
 
         // Every template name also has two extensions that specify the format and
         // engine for that template.
         // See https://symfony.com/doc/current/templates.html#template-naming
-        return $this->render('blog/ask.html.twig', [
+        return $this->render('blog/index.'.$_format.'.twig', [
             'paginator' => $latestPosts,
             'tagName' => $tag?->getName(),
         ]);
@@ -105,7 +129,7 @@ class BlogController extends AbstractController
      */
     #[Route('/post/new', methods: ['GET', 'POST'], name: 'post_new')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, PostRepository $postRepository): Response
     {
         $post = new Post();
         $post->setAuthor($this->getUser());
@@ -113,30 +137,36 @@ class BlogController extends AbstractController
         // See https://symfony.com/doc/current/form/multiple_buttons.html
         $form = $this->createForm(PostType::class, $post)
             ->add('saveAndCreateNew', SubmitType::class);
-
         $form->handleRequest($request);
 
-        // the isSubmitted() method is completely optional because the other
-        // isValid() method already checks whether the form is submitted.
-        // However, we explicitly add it to improve code readability.
-        // See https://symfony.com/doc/current/forms.html#processing-forms
+        if($post->getLink()){
+            $post->setType("url");
+
+            $exsistingPost = $postRepository->findOneBy(['link' => $post->getLink()]);
+
+            if($exsistingPost){
+                //dd($exsistingPost);
+                //return $this->redirectToRoute('blog_post');
+                return $this->redirectToRoute('blog_post', ['slug' => $exsistingPost->getSlug()]);
+            }
+
+        }
+        else{
+            $post->setType("ask");
+        }
+
         if ($form->isSubmitted() && $form->isValid()) {
+
             $entityManager->persist($post);
             $entityManager->flush();
 
-            // Flash messages are used to notify the user about the result of the
-            // actions. They are deleted automatically from the session as soon
-            // as they are accessed.
-            // See https://symfony.com/doc/current/controller.html#flash-messages
             $this->addFlash('success', 'post.created_successfully');
 
             if ($form->get('saveAndCreateNew')->isClicked()) {
-                return $this->redirectToRoute('post_new');
+                return $this->redirectToRoute('bog');
             }
-
-            return $this->redirectToRoute('post_new');
+            return $this->redirectToRoute('blog_index');
         }
-
         return $this->render('admin/blog/new.html.twig', [
             'post' => $post,
             'form' => $form->createView(),
@@ -151,23 +181,42 @@ class BlogController extends AbstractController
      * See https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html
      */
     #[Route('/posts/{slug}', methods: ['GET'], name: 'blog_post')]
-    public function postShow(Post $post): Response
+    public function postShow(Post $post, CommentRepository $commentRepository): Response
     {
-        // Symfony's 'dump()' function is an improved version of PHP's 'var_dump()' but
-        // it's not available in the 'prod' environment to prevent leaking sensitive information.
-        // It can be used both in PHP files and Twig templates, but it requires to
-        // have enabled the DebugBundle. Uncomment the following line to see it in action:
-        //
-        // dump($post, $this->getUser(), new \DateTime());
-        //
-        // The result will be displayed either in the Symfony Profiler or in the stream output.
-        // See https://symfony.com/doc/current/profiler.html
-        // See https://symfony.com/doc/current/templates.html#the-dump-twig-utilities
-        //
-        // You can also leverage Symfony's 'dd()' function that dumps and
-        // stops the execution
 
+        $comments = new ArrayCollection($commentRepository->findBy(['post' => $post, 'parentComment' => null]));
+
+        $post->setComments($comments);
         return $this->render('blog/post_show.html.twig', ['post' => $post]);
+    }
+
+    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postVote(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->addVote($this->getUser());
+        //$post->addUserIdVotes($this->getUser()->getId());
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+        //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+        return $this->redirectToRoute('blog_index');
+    }
+
+    #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postunVote(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->removeVote($this->getUser());
+        //$post->UserIdVotes($this->getUser()->getId());
+
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+        //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+        return $this->redirectToRoute('blog_index');
     }
 
     /**
@@ -197,13 +246,69 @@ class BlogController extends AbstractController
             // passed in the event and they can even modify the execution flow, so
             // there's no guarantee that the rest of this controller will be executed.
             // See https://symfony.com/doc/current/components/event_dispatcher.html
-            $eventDispatcher->dispatch(new CommentCreatedEvent($comment));
+            try{
+                $eventDispatcher->dispatch(new CommentCreatedEvent($comment));
+
+            }
+            catch(Exception $e){
+
+            }
 
             return $this->redirectToRoute('blog_post', ['slug' => $post->getSlug()]);
         }
 
         return $this->render('blog/comment_form_error.html.twig', [
             'post' => $post,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    /**
+     * NOTE: The ParamConverter mapping is required because the route parameter
+     * (postSlug) doesn't match any of the Doctrine entity properties (slug).
+     *
+     * See https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#doctrine-converter
+     */
+    #[Route('/comment/{id}', methods: ['POST'], name: 'reply_new')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+//    #[ParamConverter('parentComment', options: ['mapping' => ['id' => 'id']])]
+    public function replyNew(Request $request, Comment $parentComment, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response
+    {
+        $comment = new Comment();
+        $comment->setAuthor($this->getUser());
+        $comment->setPost($parentComment->getPost());
+
+
+
+        $form = $this->createForm(CommentType::class, $comment);
+        $form->handleRequest($request);
+
+        $parentComment->addReply($comment);
+
+        $entityManager->persist($comment);
+        $entityManager->flush();
+        if ($form->isSubmitted() && $form->isValid()) {
+//            $entityManager->persist($comment);
+//            $entityManager->flush();
+
+            // When an event is dispatched, Symfony notifies it to all the listeners
+            // and subscribers registered to it. Listeners can modify the information
+            // passed in the event and they can even modify the execution flow, so
+            // there's no guarantee that the rest of this controller will be executed.
+            // See https://symfony.com/doc/current/components/event_dispatcher.html
+            try{
+                $eventDispatcher->dispatch(new CommentCreatedEvent($comment));
+
+            }
+            catch(Exception $e){
+
+            }
+
+            return $this->redirectToRoute('blog_post', ['slug' => $parentComment->getPost()->getSlug()]);
+        }
+
+        return $this->render('blog/comment_form_error.html.twig', [
+            'post' => $parentComment->getPost(),
             'form' => $form->createView(),
         ]);
     }
@@ -225,7 +330,15 @@ class BlogController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+    public function replyForm(Comment $comment): Response
+    {
+        $form = $this->createForm(CommentType::class);
 
+        return $this->render('blog/_reply_form.html.twig', [
+            'comment' => $comment,
+            'form' => $form->createView(),
+        ]);
+    }
     #[Route('/search', methods: ['GET'], name: 'blog_search')]
     public function search(Request $request, PostRepository $posts): Response
     {
@@ -251,7 +364,6 @@ class BlogController extends AbstractController
 
         return $this->json($results);
     }
-
 
     /**
      * Finds and displays a Post entity.

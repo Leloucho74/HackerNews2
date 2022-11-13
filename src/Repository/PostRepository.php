@@ -14,8 +14,10 @@ namespace App\Repository;
 use App\Entity\Post;
 use App\Entity\Tag;
 use App\Pagination\Paginator;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use function count;
 use function Symfony\Component\String\u;
 
 /**
@@ -43,7 +45,24 @@ class PostRepository extends ServiceEntityRepository
             ->leftJoin('p.tags', 't')
             ->where('p.publishedAt <= :now')
             ->orderBy('p.publishedAt', 'DESC')
-            ->setParameter('now', new \DateTime())
+            ->setParameter('now', new DateTime())
+        ;
+
+        if (null !== $tag) {
+            $qb->andWhere(':tag MEMBER OF p.tags')
+                ->setParameter('tag', $tag);
+        }
+        return (new Paginator($qb))->paginate($page);
+    }
+    public function findNewest(int $page = 1, Tag $tag = null): Paginator
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->addSelect('a', 't')
+            ->innerJoin('p.author', 'a')
+            ->leftJoin('p.tags', 't')
+            ->where('p.publishedAt <= :now')
+            ->orderBy('p.numberOfVotes', 'DESC')
+            ->setParameter('now', new DateTime())
         ;
 
         if (null !== $tag) {
@@ -60,7 +79,7 @@ class PostRepository extends ServiceEntityRepository
     {
         $searchTerms = $this->extractSearchTerms($query);
 
-        if (0 === \count($searchTerms)) {
+        if (0 === count($searchTerms)) {
             return [];
         }
 
@@ -79,7 +98,28 @@ class PostRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    /**
+     * @return Post[] Returns an array of Query for paginator filtering by type
+     */
+    public function findByType(int $page = 1, Tag $tag = null, String $type): Paginator
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->addSelect('a', 't')
+            ->innerJoin('p.author', 'a')
+            ->leftJoin('p.tags', 't')
+            ->where('p.publishedAt <= :now')
+            ->andWhere('p.type = :type')
+            ->orderBy('p.publishedAt', 'DESC')
+            ->setParameter('now', new DateTime())
+            ->setParameter('type', $type)
+        ;
 
+        if (null !== $tag) {
+            $qb->andWhere(':tag MEMBER OF p.tags')
+                ->setParameter('tag', $tag);
+        }
+        return (new Paginator($qb))->paginate($page);
+    }
     /**
      * Transforms the search string into an array of search terms.
      */

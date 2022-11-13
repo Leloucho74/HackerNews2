@@ -11,6 +11,7 @@
 
 namespace App\Controller;
 
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,7 +42,7 @@ class SecurityController extends AbstractController
         // page, after a successful login you are redirected to a page in the previous
         // locale. This code regenerates the referrer URL whenever the login page is
         // browsed, to ensure that its locale is always the current one.
-        $this->saveTargetPath($request->getSession(), 'main', $this->generateUrl('admin_index'));
+        $this->saveTargetPath($request->getSession(), 'main', $this->generateUrl('blog_index'));
 
         return $this->render('security/login.html.twig', [
             // last username entered by the user (if any)
@@ -60,6 +61,6 @@ class SecurityController extends AbstractController
     #[Route('/logout', name: 'security_logout')]
     public function logout(): void
     {
-        throw new \Exception('This should never be reached!');
+        throw new Exception('This should never be reached!');
     }
 }

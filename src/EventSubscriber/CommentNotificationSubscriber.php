@@ -42,6 +42,7 @@ class CommentNotificationSubscriber implements EventSubscriberInterface
 
     public function onCommentCreated(CommentCreatedEvent $event): void
     {
+        /*
         $comment = $event->getComment();
         $post = $comment->getPost();
 
@@ -68,5 +69,6 @@ class CommentNotificationSubscriber implements EventSubscriberInterface
         // That's why in the development environment you won't actually receive any email.
         // However, you can inspect the contents of those unsent emails using the debug toolbar.
         $this->mailer->send($email);
+        */
     }
 }

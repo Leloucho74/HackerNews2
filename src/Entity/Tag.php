@@ -12,6 +12,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 /**
  * Defines the properties of the Tag entity to represent the post tags.
@@ -22,7 +23,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'symfony_demo_tag')]
-class Tag implements \JsonSerializable
+class Tag implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

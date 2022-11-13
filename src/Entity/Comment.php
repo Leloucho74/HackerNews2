@@ -11,9 +11,14 @@
 
 namespace App\Entity;
 
+use App\Repository\CommentRepository;
+use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use function Symfony\Component\String\u;
 use Symfony\Component\Validator\Constraints as Assert;
+use function Symfony\Component\String\u;
 
 /**
  * Defines the properties of the Comment entity to represent the blog comments.
@@ -25,7 +30,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @author Ryan Weaver <weaverryan@gmail.com>
  * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  */
-#[ORM\Entity]
+
+#[ORM\Entity(repositoryClass: CommentRepository::class)]
 #[ORM\Table(name: 'symfony_demo_comment')]
 class Comment
 {
@@ -44,15 +50,22 @@ class Comment
     private ?string $content = null;
 
     #[ORM\Column(type: 'datetime')]
-    private \DateTime $publishedAt;
+    private DateTime $publishedAt;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $author = null;
 
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'replies')]
+    private ?self $parentComment = null;
+
+    #[ORM\OneToMany(mappedBy: 'parentComment', targetEntity: self::class)]
+    private Collection $replies;
+
     public function __construct()
     {
-        $this->publishedAt = new \DateTime();
+        $this->publishedAt = new DateTime();
+        $this->replies = new ArrayCollection();
     }
 
     #[Assert\IsTrue(message: 'comment.is_spam')]
@@ -78,12 +91,12 @@ class Comment
         $this->content = $content;
     }
 
-    public function getPublishedAt(): \DateTime
+    public function getPublishedAt(): DateTime
     {
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(\DateTime $publishedAt): void
+    public function setPublishedAt(DateTime $publishedAt): void
     {
         $this->publishedAt = $publishedAt;
     }
@@ -107,4 +120,47 @@ class Comment
     {
         $this->post = $post;
     }
+
+    public function getParentComment(): ?self
+    {
+        return $this->parentComment;
+    }
+
+    public function setParentComment(?self $parentComment): self
+    {
+        $this->parentComment = $parentComment;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getReplies(): Collection
+    {
+        return $this->replies;
+    }
+
+    public function addReply(self $reply): self
+    {
+        if (!$this->replies->contains($reply)) {
+            $this->replies->add($reply);
+            $reply->setParentComment($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReply(self $reply): self
+    {
+        if ($this->replies->removeElement($reply)) {
+            // set the owning side to null (unless already changed)
+            if ($reply->getParentComment() === $this) {
+                $reply->setParentComment(null);
+            }
+        }
+
+        return $this;
+    }
+
 }

@@ -11,7 +11,6 @@
     Login | {{ parent() }}
 {% endblock title %}
 
-
 {% block main %}
     {% if error %}
         <div class="alert alert-danger">
@@ -21,7 +20,7 @@
 
     <div class="row">
         <div class="col-sm-5">
-            <div style="background-color: #f6f6ef" class="well">
+            <div class="well">
                 <form action="{{ path('security_login') }}" method="post">
                     <fieldset>
                         <legend><i class="fa fa-lock" aria-hidden="true"></i>Login</legend>

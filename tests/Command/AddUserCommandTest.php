@@ -12,7 +12,10 @@
 namespace App\Tests\Command;
 
 use App\Command\AddUserCommand;
+use App\Entity\User;
 use App\Repository\UserRepository;
+use Generator;
+use const PHP_OS_FAMILY;
 
 class AddUserCommandTest extends AbstractCommandTest
 {
@@ -25,7 +28,7 @@ class AddUserCommandTest extends AbstractCommandTest
 
     protected function setUp(): void
     {
-        if ('Windows' === \PHP_OS_FAMILY) {
+        if ('Windows' === PHP_OS_FAMILY) {
             $this->markTestSkipped('`stty` is required to test this command.');
         }
     }
@@ -72,7 +75,7 @@ class AddUserCommandTest extends AbstractCommandTest
      * This is used to execute the same test twice: first for normal users
      * (isAdmin = false) and then for admin users (isAdmin = true).
      */
-    public function isAdminDataProvider(): ?\Generator
+    public function isAdminDataProvider(): ?Generator
     {
         yield [false];
         yield [true];
@@ -84,7 +87,7 @@ class AddUserCommandTest extends AbstractCommandTest
      */
     private function assertUserCreated(bool $isAdmin): void
     {
-        /** @var \App\Entity\User $user */
+        /** @var User $user */
         $user = $this->getContainer()->get(UserRepository::class)->findOneByEmail($this->userData['email']);
         $this->assertNotNull($user);
 

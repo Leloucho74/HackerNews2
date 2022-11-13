@@ -12,6 +12,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -29,6 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'symfony_demo_user')]
+#[UniqueEntity('username')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -37,14 +40,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', nullable: true)]
-    #[Assert\NotBlank]
-    private ?string $fullName = null;
+    private ?string $fullName = "";
 
     #[ORM\Column(type: 'string', unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 2, max: 50)]
-    private ?string $username = "";
-
+    private ?string $username = null;
 
     #[ORM\Column(type: 'string', unique: true, nullable: true)]
     #[Assert\Email]
@@ -53,9 +54,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string')]
     private ?string $password = null;
 
-
     #[ORM\Column(type: 'json')]
     private array $roles = [];
+
+    #[ORM\ManyToMany(targetEntity: Post::class, mappedBy: 'votes')]
+    private Collection $votedPosts;
+
+    public function __construct()
+    {
+        $this->votedPosts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -74,6 +82,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
+        if($this->username == null) return "";
         return $this->username;
     }
 
@@ -164,5 +173,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         [$this->id, $this->username, $this->password] = $data;
     }
 
+    /**
+     * @return Collection<int, Post>
+     */
+    public function getVotedPosts(): Collection
+    {
+        return $this->votedPosts;
+    }
+
+    public function addVotedPost(Post $votedPost): self
+    {
+        if (!$this->votedPosts->contains($votedPost)) {
+            $this->votedPosts->add($votedPost);
+            $votedPost->addVote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVotedPost(Post $votedPost): self
+    {
+        if ($this->votedPosts->removeElement($votedPost)) {
+            $votedPost->removeVote($this);
+        }
+
+        return $this;
+    }
 
 }

@@ -44,10 +44,6 @@ class UserType extends AbstractType
                 'label' => 'label.username',
                 'disabled' => true,
             ])
-            ->add('id', TextType::class, [
-                'label' => 'label.id',
-                'disabled' => true,
-            ])
             ->add('fullName', TextType::class, [
                 'label' => 'label.fullname',
             ])
@@ -56,6 +52,7 @@ class UserType extends AbstractType
             ])
         ;
     }
+
     /**
      * {@inheritdoc}
      */

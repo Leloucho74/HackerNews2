@@ -1,3 +1,8 @@
+{#
+   This is the base template used as the application layout which contains the
+   common elements and decorates all the other templates.
+   See https://symfony.com/doc/current/templates.html#template-inheritance-and-layouts
+#}
 <!DOCTYPE html>
 <html lang="{{ app.request.locale }}">
     <head>
@@ -5,8 +10,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <title>{% block title %}Hacker News{% endblock %}</title>
         <link rel="alternate" type="application/rss+xml" title="{{ 'rss.title'|trans }}" href="{{ path('blog_rss') }}">
-        <link rel="icon" type="image/x-icon" src="logo/hackernews.png"/>
 
+        {#
+            Those two blocks defines frontend entrypoint for CSS and JavaScript assets
+            See https://symfony.com/doc/current/frontend.html
+        #}
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
         {% endblock %}
@@ -14,49 +22,41 @@
             {{ encore_entry_script_tags('app') }}
         {% endblock %}
 
-
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
 
     <body id="{% block body_id %}{% endblock %}">
 
-    {% block header %}
-    <div class="container body-container" style="background-color: #f6f6ef">
-        <div class="row">
-            <header style="background-color: #FF6600">
-                <div class="navbar navbar-default navbar-static-top" style="background-color: #FF6600"
-                     role="navigation">
+        {% block header %}
+            <header>
+                <div class="navbar navbar-default navbar-static-top" role="navigation" style="background-color:#ff6600; ">
                     <div class="container">
                         <div class="navbar-header col-md-3 col-lg-2">
-
-                            <a class="navbar-brand">
-                                <img src="logo/hackernews.png">
+                            <a class="navbar-brand" href="{{ path('blog_index') }}">
+                                <b style="color: black">Hacker News </b>
                             </a>
-
-                            <a style="color: black" class="navbar-brand" href="{{ path('blog_index') }}">
-                                <p class="font-weight-bold">Hacker News</p>
-                            </a>
-
 
                         </div>
                         <div class="navbar-collapse collapse">
-                            <ul class="nav navbar-nav navbar-left">
+                            <ul class="nav navbar-nav navbar-left" style="margin-left:0" >
 
                                 <li>
-                                    <a style="color: black" class="navbar-brand" href="{{ path('blog_index') }}">
-                                        New
+                                    <a style="color: black" href="{{ path('blog_newest_index') }}" >
+                                        new
                                     </a>
                                 </li>
 
                                 <li>
-                                    <a style="color: black" href="{{ path('blog_search') }}"> Threads</a>
+                                    <a style="color: black"> past </a>
                                 </li>
-
                                 <li>
                                     <a style="color: black"> comments </a>
                                 </li>
 
                                 <li>
-                                    <a style="color: black" class="navbar-brand" href="{{ path('blog_ask') }}"> ask </a>
+                                    <a style="color: black" href="{{ path('blog_index', parameters = {type: 'ask'}) }}">
+                                        ask
+                                    </a>
                                 </li>
 
                                 <li>
@@ -73,49 +73,77 @@
                                     </a>
 
                                 </li>
+                                <li>
+                                    <a style="color: black" href="{{ path('blog_search') }}"> <i class="fa fa-search"></i> {{ 'menu.search'|trans }}</a>
+                                </li>
+
                                 {% if app.user %}
-                                    <li>
-                                        <a style="color: black" href="{{ path('user_edit') }}"><i class="fa fa-user"
-                                                                                                  aria-hidden="true"></i> {{ app.user.username|trans }}
+                                    <li class="dropdown">
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" id="user" style="color: black">
+                                            <i class="fa fa-user" aria-hidden="true" style="color: black"></i>
+                                            <span class="caret"></span>
+                                            <span class="sr-only">{{ app.user.username }}</span>
                                         </a>
+                                        <ul class="dropdown-menu user" role="menu" aria-labelledby="user">
+                                            <li>
+                                                <a href="{{ path('user_edit') }}">
+                                                    <i class="fa fa-edit" aria-hidden="true"></i> {{ app.user.username }}
+                                                </a>
+                                            </li>
+                                            <li class="divider"></li>
+                                            <li>
+                                                <a href="{{ logout_path() }}">
+                                                    <i class="fa fa-sign-out" aria-hidden="true"></i> {{ 'menu.logout'|trans }}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a href="{{ path('security_login') }}"> <i class="fa fa-sign-in"></i> {{ 'Login' }}</a>
                                     </li>
                                     <li>
-                                        <a style="color: black" href="{{ logout_path() }}">
-                                            <i class="fa fa-sign-out" aria-hidden="true"></i> {{ 'menu.logout'|trans }}
-                                        </a>
+                                        <a href="{{ path('security_register') }}"> {{ 'Register' }}</a>
                                     </li>
                                 {% endif %}
-                                {% if not app.user %}
-                                    <li>
-                                        <a style="color: black" href="{{ path('user_edit') }}"> <i
-                                                    class="fa fa-sign-in"></i> {{ "Login"|trans }} </a>
-                                    </li>
-                                {% endif %}
+
+                                <li class="dropdown" >
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" id="locales">
+                                        <i class="fa fa-globe" aria-hidden="true" style="color: black"></i>
+                                        <span class="caret" style="color: black"></span>
+                                        <span class="sr-only">{{ 'menu.choose_language'|trans }}</span>
+                                    </a>
+                                    <ul class="dropdown-menu locales" role="menu" aria-labelledby="locales">
+                                        {% for locale in locales() %}
+                                            <li {% if app.request.locale == locale.code %}aria-checked="true" class="active"{% else %}aria-checked="false"{% endif %} role="menuitem"><a href="{{ path(app.request.get('_route', 'blog_index'), app.request.get('_route_params', [])|merge({_locale: locale.code})) }}">{{ locale.name|capitalize }} <small>{{ locale.code[0:2] }}</small></a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </header>
-            {% endblock %}
+        {% endblock %}
 
-            <div class="container body-container">
-                {% block body %}
-                    <div class="row">
-                        <div id="main" class="col-sm-9">
-                            {{ include('default/_flash_messages.html.twig') }}
+        <div class="container body-container" style="background-color:;">
 
-                            {% block main %}{% endblock %}
-                        </div>
+            {% block body %}
+                <div class="row">
+                    <div id="main" class="col-sm-9">
+                        {{ include('default/_flash_messages.html.twig') }}
+
+                        {% block main %}{% endblock %}
                     </div>
-                {% endblock %}
-            </div>
 
 
-            {# it's not mandatory to set the timezone in localizeddate(). This is done to
+                </div>
+            {% endblock %}
+        </div>
+
+        {# it's not mandatory to set the timezone in localizeddate(). This is done to
            avoid errors when the 'intl' PHP extension is not available and the application
            is forced to use the limited "intl polyfill", which only supports UTC and GMT #}
-            <!-- Page rendered on {{ 'now'|format_datetime('long', 'long', '', 'UTC') }} -->
-        </div>
-    </div>
+        <!-- Page rendered on {{ 'now'|format_datetime('long', 'long', '', 'UTC') }} -->
     </body>
 </html>

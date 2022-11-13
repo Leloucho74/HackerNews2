@@ -13,6 +13,9 @@ namespace App\Controller;
 
 use App\Form\Type\ChangePasswordType;
 use App\Form\UserType;
+use App\Repository\CommentRepository;
+use App\Repository\PostRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +32,21 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/profile'), IsGranted('ROLE_USER')]
 class UserController extends AbstractController
 {
+    #[Route('/show/{username}', methods: ['GET'], name: 'user_show')]
+//    #[ParamConverter('user', options: ['mapping' => ['username' => 'username']])]
+    public function show(Request $request, UserRepository $userRepository, PostRepository $postRepository, CommentRepository $commentRepository, EntityManagerInterface $entityManager): Response
+    {
+
+        $user = $userRepository->findOneBy(["username" => $request->attributes->get("username")]);
+        $posts = $postRepository->findOneBy(["author" => $user]);
+        $comments = $commentRepository->findOneBy(["author" => $user]);
+        $user->posts = $posts;
+        $user->comments = $comments;
+        return $this->render('user/show.html.twig', [
+            'showUser' => $user
+        ]);
+    }
+
     #[Route('/edit', methods: ['GET', 'POST'], name: 'user_edit')]
     public function edit(Request $request, EntityManagerInterface $entityManager): Response
     {
