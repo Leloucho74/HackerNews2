@@ -32,7 +32,7 @@
                             <a href="{{ path('security_login') }}"><i class="fa fw fa-long-arrow-down" style="color: black"></i></a>
                         {% endif %}
 
-                        {% if post.link %}
+                        {% if post.link != "*"%}
                             <a href="{{ post.link }}">
                                 <u style="color: black">
                                     {{ post.title }}

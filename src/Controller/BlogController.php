@@ -200,8 +200,7 @@ class BlogController extends AbstractController
         $entityManager->flush();
 
         //dd($newPost);
-        //return $this->redirectToRoute('blog_index', array('ask' => $post->getSlug()));
-        if($this)
+
         return $this->redirectToRoute('blog_index');
     }
 
