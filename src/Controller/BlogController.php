@@ -66,7 +66,7 @@ class BlogController extends AbstractController
         $latestPosts = null;
 
         if(!$latestPosts){
-            $latestPosts = $posts->findNewest($page, $tag);
+            $latestPosts = $posts->findVotes($page, $tag);
         }
 
         // Every template name also has two extensions that specify the format and
@@ -96,7 +96,7 @@ class BlogController extends AbstractController
                 case 'ask':
                     $type = 'ask';
                     //$latestPosts = $posts->findBy(['type' => $type]);
-                    $latestPosts = $posts->findByType($page, $tag, $type);
+                    $latestPosts = $posts->findAsk($page, $tag);
                     break;
                 case 'url':
                     $type = 'url';
@@ -139,7 +139,7 @@ class BlogController extends AbstractController
             ->add('saveAndCreateNew', SubmitType::class);
         $form->handleRequest($request);
 
-        if($post->getLink()){
+        if($post->getLink() != '*'){
             $post->setType("url");
 
             $exsistingPost = $postRepository->findOneBy(['link' => $post->getLink()]);
@@ -200,7 +200,8 @@ class BlogController extends AbstractController
         $entityManager->flush();
 
         //dd($newPost);
-        //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+        //return $this->redirectToRoute('blog_index', array('ask' => $post->getSlug()));
+        if($this)
         return $this->redirectToRoute('blog_index');
     }
 

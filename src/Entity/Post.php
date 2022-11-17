@@ -82,7 +82,7 @@ class Post
     private Collection $tags;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $link = null;
+    private ?string $link = '*';
 
     #[ORM\Column(length: 255)]
     private ?string $type = 'ask';

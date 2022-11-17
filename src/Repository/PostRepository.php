@@ -54,6 +54,46 @@ class PostRepository extends ServiceEntityRepository
         }
         return (new Paginator($qb))->paginate($page);
     }
+
+    public function findask(int $page = 1, Tag $tag = null): Paginator
+    {
+        $key = null;
+        $term = "*";
+
+        $qb = $this->createQueryBuilder('p')
+            ->addSelect('a', 't')
+            ->innerJoin('p.author', 'a')
+            ->leftJoin('p.tags', 't')
+            ->where('p.link LIKE :t_'.$key)
+            ->setParameter('t_'.$key, '%'.$term.'%')
+            ->orderBy('p.publishedAt', 'DESC')
+        ;
+
+        if (null !== $tag) {
+            $qb->andWhere(':tag MEMBER OF p.tags')
+                ->setParameter('tag', $tag);
+        }
+        return (new Paginator($qb))->paginate($page);
+    }
+
+    public function findVotes(int $page = 1, Tag $tag = null): Paginator
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->addSelect('a', 't')
+            ->innerJoin('p.author', 'a')
+            ->leftJoin('p.tags', 't')
+            ->where('p.publishedAt <= :now')
+            ->orderBy('p.numberOfVotes', 'DESC')
+            ->setParameter('now', new DateTime())
+        ;
+
+        if (null !== $tag) {
+            $qb->andWhere(':tag MEMBER OF p.tags')
+                ->setParameter('tag', $tag);
+        }
+        return (new Paginator($qb))->paginate($page);
+    }
+
     public function findNewest(int $page = 1, Tag $tag = null): Paginator
     {
         $qb = $this->createQueryBuilder('p')
@@ -101,7 +141,7 @@ class PostRepository extends ServiceEntityRepository
     /**
      * @return Post[] Returns an array of Query for paginator filtering by type
      */
-    public function findByType(int $page = 1, Tag $tag = null, String $type): Paginator
+    public function findByType($page = 1, Tag $tag = null, String $type): Paginator
     {
         $qb = $this->createQueryBuilder('p')
             ->addSelect('a', 't')
