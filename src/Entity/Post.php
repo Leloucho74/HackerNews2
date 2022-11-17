@@ -50,8 +50,9 @@ class Post
     #[ORM\Column(type: 'string')]
     private ?string $slug = null;
 
-    #[ORM\Column(type: 'string', nullable: true)]
-    private ?string $summary = '';
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $link = '*';
 
     #[ORM\Column(type: 'text')]
     #[Assert\NotBlank(message: 'post.blank_content')]
@@ -80,12 +81,6 @@ class Post
     #[ORM\OrderBy(['name' => 'ASC'])]
     #[Assert\Count(max: 4, maxMessage: 'post.too_many_tags')]
     private Collection $tags;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $link = '*';
-
-    #[ORM\Column(length: 255)]
-    private ?string $type = 'ask';
 
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'votedPosts')]
     private Collection $votes;
