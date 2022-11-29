@@ -44,9 +44,16 @@ class UserType extends AbstractType
                 'label' => 'label.username',
                 'disabled' => true,
             ])
+
+            ->add('id', TextType::class, [
+                'label' => 'karma',
+                'disabled' => true,
+            ])
+
             ->add('fullName', TextType::class, [
                 'label' => 'label.fullname',
             ])
+
             ->add('email', EmailType::class, [
                 'label' => 'label.email',
             ])

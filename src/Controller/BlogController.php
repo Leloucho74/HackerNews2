@@ -63,11 +63,8 @@ class BlogController extends AbstractController
         if ($request->query->has('tag')) {
             $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
         }
-        $latestPosts = null;
 
-        if(!$latestPosts){
-            $latestPosts = $posts->findVotes($page, $tag);
-        }
+        $latestPosts = $posts->findVotes($page, $tag);
 
         // Every template name also has two extensions that specify the format and
         // engine for that template.
@@ -80,45 +77,43 @@ class BlogController extends AbstractController
 
     #[Route('/newest', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_newest_index')]
     #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_newest_rss')]
-    #[Route('/page/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_newest_paginated')]
+    #[Route('/newest/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_newest_paginated')]
     #[Cache(smaxage: 10)]
     public function newestPosts(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
     {
         $tag = null;
-
+        //dd($request->query);
         if ($request->query->has('tag')) {
             $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
         }
-        $latestPosts = null;
-        if ($request->query->has('type')) {
-            $type = '';
-            switch ($request->query->get('type')){
-                case 'ask':
-                    $type = 'ask';
-                    //$latestPosts = $posts->findBy(['type' => $type]);
-                    $latestPosts = $posts->findAsk($page, $tag);
-                    break;
-                case 'url':
-                    $type = 'url';
-                    //$latestPosts = $posts->findBy(['type' => $type]);
-                    $latestPosts = $posts->findByType($page, $tag, $type);
-                    break;
-                default:
-                    $latestPosts = $posts->findLatest($page, $tag);
-            }
-        }
-        if(!$latestPosts){
-            $latestPosts = $posts->findLatest($page, $tag);
-        }
+
+        $latestPosts = $posts->findLatest($page, $tag);
 
         // Every template name also has two extensions that specify the format and
         // engine for that template.
         // See https://symfony.com/doc/current/templates.html#template-naming
-        return $this->render('blog/index.'.$_format.'.twig', [
+        return $this->render('blog/newest.'.$_format.'.twig', [
             'paginator' => $latestPosts,
             'tagName' => $tag?->getName(),
         ]);
     }
+    #[Route('/ask', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_ask')]
+    #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_rss')]
+    #[Route('/ask/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_ask_paginated')]
+    #[Cache(smaxage: 10)]
+    public function ask(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
+    {
+        $tag = null;
+        if ($request->query->has('tag')) {
+            $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
+        }
+        $latestPosts = $posts->findask($page, $tag);
+        return $this->render('blog/ask.html.twig', [
+            'paginator' => $latestPosts,
+            'tagName' => $tag?->getName(),
+        ]);
+    }
+
 
     /**
      * Creates a new Post entity.
@@ -203,6 +198,32 @@ class BlogController extends AbstractController
 
         return $this->redirectToRoute('blog_index');
     }
+    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post_newest')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postVote_new(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->addVote($this->getUser());
+        //$post->addUserIdVotes($this->getUser()->getId());
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+
+        return $this->redirectToRoute('blog_newest');
+    }
+    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post_ask')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postVote_ask(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->addVote($this->getUser());
+        //$post->addUserIdVotes($this->getUser()->getId());
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+
+        return $this->redirectToRoute('blog_ask');
+    }
 
     #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -217,6 +238,34 @@ class BlogController extends AbstractController
         //dd($newPost);
         //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
         return $this->redirectToRoute('blog_index');
+    }
+    #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post_newest')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postunVote_new(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->removeVote($this->getUser());
+        //$post->UserIdVotes($this->getUser()->getId());
+
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+        //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+        return $this->redirectToRoute('blog_newest');
+    }
+    #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post_ask')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postunVote_ask(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->removeVote($this->getUser());
+        //$post->UserIdVotes($this->getUser()->getId());
+
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+        //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
+        return $this->redirectToRoute('blog_ask');
     }
 
     /**
@@ -343,13 +392,12 @@ class BlogController extends AbstractController
     public function search(Request $request, PostRepository $posts): Response
     {
         $query = $request->query->get('q', '');
-        $limit = $request->query->get('l', 10);
 
         if (!$request->isXmlHttpRequest()) {
             return $this->render('blog/search.html.twig', ['query' => $query]);
         }
 
-        $foundPosts = $posts->findBySearchQuery($query, $limit);
+        $foundPosts = $posts->findBySearchQuery($query);
 
         $results = [];
         foreach ($foundPosts as $post) {
