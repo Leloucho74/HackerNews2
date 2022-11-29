@@ -1,0 +1,749 @@
+---
+openapi: 3.0.0
+info:
+  title: HackerNews API
+  description: The API for the web HackerNews
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/ISAACROMAGRANADO/HACKERNEWS/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: https://virtserver.swaggerhub.com/ERICHURTADO/HackerNews/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: http://arcane-reef-50644.herokuapp.com/es/
+paths:
+  /:
+    get:
+      tags:
+      - blog
+      summary: Return all posts ordered by votes
+      operationId: index
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                title: ArrayOfNews
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /newest:
+    get:
+      tags:
+      - blog
+      summary: Return all posts ordered by time of creation
+      operationId: newestPosts
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                title: ArrayOfNews
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /ask:
+    get:
+      tags:
+      - blog
+      summary: Return all posts of type ask
+      operationId: askPost
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                title: ArrayOfNews
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /post/new:
+    get:
+      tags:
+      - blog
+      summary: Return an existing post if the new already exists
+      operationId: new_created
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                title: ArrayOfNews
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+    post:
+      tags:
+      - blog
+      summary: Create a post
+      operationId: new
+      requestBody:
+        description: Attributes needed to create a post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_new_body'
+      responses:
+        "200":
+          description: New with the URL that already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "201":
+          description: New created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "400":
+          description: 'Error: Bad Request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                Error blank Title:
+                  $ref: '#/components/examples/error400TitleBlank'
+                Error invalid Url:
+                  $ref: '#/components/examples/error400InvalidUrl'
+                Error Url and Text are blank:
+                  $ref: '#/components/examples/error400UrlAndTextBlank'
+        "401":
+          description: 'Error: Unauthorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NoApiKey:
+                  $ref: '#/components/examples/error401'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ApiKeyNotValid:
+                  $ref: '#/components/examples/error403'
+  /posts/{post}:
+    get:
+      tags:
+      - blog
+      summary: Return a post from an ID
+      operationId: postShow
+      parameters:
+      - name: post
+        in: path
+        description: ID of the post
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: object
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+  /posts/{post}/vote:
+    get:
+      tags:
+      - blog
+      summary: Vote a post
+      operationId: postVote
+      parameters:
+      - name: post
+        in: path
+        description: ID of the post
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: object
+      responses:
+        "201":
+          description: Post voted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+  /posts/{post}/unvote:
+    get:
+      tags:
+      - blog
+      summary: Unvote a post
+      operationId: postunVote
+      parameters:
+      - name: post
+        in: path
+        description: ID of the post
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: object
+      responses:
+        "201":
+          description: Post unvoted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+  /comment/{post}/new:
+    post:
+      tags:
+      - blog
+      summary: Create a comment
+      operationId: commentNew
+      parameters:
+      - name: post
+        in: path
+        description: ID of the post
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: Attributes needed to create a post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_new_body_1'
+        required: true
+      responses:
+        "201":
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        "400":
+          description: 'Error: Bad Request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                Error blank Content:
+                  $ref: '#/components/examples/error400ContentBlank'
+        "401":
+          description: 'Error: Unauthorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NoApiKey:
+                  $ref: '#/components/examples/error401'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ApiKeyNotValid:
+                  $ref: '#/components/examples/error403'
+        "404":
+          description: 'Error: Not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ContributionNotFound:
+                  $ref: '#/components/examples/error404ContributionNotFound'
+  /search:
+    get:
+      tags:
+      - blog
+      summary: Return the posts searched
+      operationId: search
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                title: ArrayOfNews
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+  /profile/edit:
+    get:
+      tags:
+      - user
+      summary: Return the information of the user with given token
+      operationId: edit_show
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyProfile'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                errorExample:
+                  $ref: '#/components/examples/error403'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ReplyNotFound:
+                  $ref: '#/components/examples/error404UserNotFound'
+    put:
+      tags:
+      - user
+      summary: Updates the user profile with the information given in the request
+      operationId: edit
+      requestBody:
+        description: Updates the user profile with the information given in the request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/profile_edit_body'
+      responses:
+        "200":
+          description: Succesfull request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyProfile'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                errorExample:
+                  $ref: '#/components/examples/error403'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                errorExample:
+                  $ref: '#/components/examples/error404U'
+  /profile/show/{username}:
+    get:
+      tags:
+      - user
+      summary: Return an user from an id
+      operationId: show
+      parameters:
+      - name: username
+        in: path
+        description: ID of the user
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Succesfull request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "404":
+          description: 'Error: Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                errorExample:
+                  $ref: '#/components/examples/error404U'
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the contribution
+          format: int64
+          example: 1
+        title:
+          type: string
+          description: Title of the contribution
+          example: Hello World!
+        slug:
+          type: string
+          description: The slug that contains the Post
+          example: http://127.0.0.1:44903/es/posts/"Nombre_post"
+        link:
+          type: string
+          description: URL of the Post (must be unique)
+          example: https://www.google.es/
+        content:
+          type: string
+          description: Text of the Post (Can be null)
+          example: This site is google.
+        publishedAt:
+          type: string
+          description: Date and time of the Post's creation
+          format: date-time
+        author:
+          type: object
+          description: Creator of the Post
+          format: string
+          example: JESUS
+        comments:
+          type: object
+          description: Collection of all the comments of the Post (Ordered Desc)
+          format: sring
+          example:
+          - Hy good Post
+          - Great
+        tags:
+          type: object
+          description: Collection of all the tags of the Post (Ordered Asc and max tags = 4)
+          format: string
+          example:
+          - ASK
+          - Adventure
+        votes:
+          type: object
+          description: Collection of the votes of the user
+          format: int64
+          example: 3
+        userIdVotes:
+          type: object
+          description: Id of the User's that have voted the Post
+          format: int64
+          example:
+          - 1
+          - 5
+          - 15
+          - 23
+        numberOfVotes:
+          type: integer
+          description: Number of votes of the Post
+          format: int64
+          example: 23
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the comment
+          format: int64
+          example: 1
+        post:
+          type: object
+          description: The post that has the comment
+        content:
+          type: string
+          description: Content of the comment
+          example: Hy good post!
+        publishedAt:
+          type: string
+          description: Date and time of the Post's creation
+          format: date-time
+        author:
+          type: object
+          description: User that has made the comment
+          format: string
+          example: JESUS
+        parentComent:
+          type: object
+          description: If the comment is a reply, the parentComment is the comment we are replying
+        replies:
+          type: object
+          description: Collection of the replies that the Comment has
+          format: Comment
+    Reply:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the reply
+          format: int64
+          example: 10
+        content:
+          type: string
+          description: Content of the reply
+          example: Hola!
+        creator:
+          type: string
+          description: Creator of the reply
+          example: isaacroma
+        comment_id:
+          type: integer
+          description: Unique identifier representing the comment where the reply is being posted
+          format: int64
+          example: 9
+        reply_id:
+          type: integer
+          description: Unique identifier representing the parent reply where the new reply is being posted
+          format: int64
+          example: 8
+        created_at:
+          type: string
+          description: Date and time of the reply's creation
+          format: date-time
+        updated_at:
+          type: string
+          description: Date and time of the most recent reply's update
+          format: date-time
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the tag
+          format: int64
+          example: 37
+        name:
+          type: string
+          description: Describes the Post
+          example: Adventure
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the user
+          format: int64
+          example: 69
+        fullName:
+          type: string
+          description: The name, and the two surnames of the User
+          format: full-name
+          example: Jesus Bermejo Ponferradina
+        username:
+          type: string
+          description: Name that represents the User
+          example: Joselito
+        email:
+          type: string
+          description: The email that the User has
+          example: jesus.bermejo@estudiantat.upc.edu
+        password:
+          type: string
+          description: The password that the User has to enter
+          example: asdsad
+        voted_posts:
+          type: object
+          description: A collection of the Posts that the User has voted
+          format: Post
+    MyProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing the user
+          format: int64
+          example: 5
+        username:
+          type: string
+          description: Name of the user
+          example: Marta
+        karma:
+          type: integer
+          description: Karma of the user
+          format: int64
+          example: 125
+        about:
+          type: string
+          description: Little description about the user
+          example: Estudiante de ASW
+        created_at:
+          type: string
+          description: Date and time of the user's creation
+          format: date-time
+        apiKey:
+          type: string
+          description: API Key of the user
+          example: LkHD123DSAKiS4ac
+    ErrorResult:
+      type: object
+      properties:
+        status:
+          type: integer
+          enum:
+          - 400
+          - 401
+          - 403
+          - 404
+          - 409
+        error:
+          type: string
+          enum:
+          - Bad Request
+          - Unauthorized
+          - Forbidden
+          - Not Found
+          - Conflict
+        message:
+          type: string
+    post_new_body:
+      required:
+      - New
+      type: object
+      properties:
+        title:
+          type: string
+          example: this is a new title
+        url:
+          type: string
+          example: https://google.com/
+        text:
+          type: string
+          example: if this is not empty, text will be a comment of a post of type url
+    post_new_body_1:
+      required:
+      - Comment
+      type: object
+      properties:
+        content:
+          type: string
+          example: This is a content example
+    comment_id_body:
+      required:
+      - Reply
+      type: object
+      properties:
+        content:
+          type: string
+          example: This is a content example
+    profile_edit_body:
+      required:
+      - UserType
+      type: object
+      properties:
+        username:
+          type: string
+          example: this is a new username
+        fullName:
+          type: string
+          example: Laura Gonzalez
+        email:
+          type: string
+          example: laura@gmail.com
+  examples:
+    error400InvalidUrl:
+      value:
+        status: 400
+        error: Bad Request
+        message: Invalid URL
+    error400InvalidIdContribution:
+      value:
+        status: 400
+        error: Bad Request
+        message: Invalid contribution ID
+    error400UrlAndTextBlank:
+      value:
+        status: 400
+        error: Bad Request
+        message: URL and Text can't be blank at the same time
+    error400TitleBlank:
+      value:
+        status: 400
+        error: Bad Request
+        message: Title can't be blank
+    error400ContentBlank:
+      value:
+        status: 400
+        error: Bad Request
+        message: Content can't be blank
+    error400TextNotEmpty:
+      value:
+        status: 400
+        error: Bad Request
+        message: Contribution is type URL, can not have text
+    error401:
+      value:
+        status: 401
+        error: Unauthorized
+        message: You provided no api key (X-API-KEY Header)
+    error403:
+      value:
+        status: 403
+        error: Forbidden
+        message: Your api key (X-API-KEY Header) is not valid
+    error403ContributionDoesNotBelong:
+      value:
+        status: 403
+        error: Forbidden
+        message: This contribution does not belong to you
+    error403CommentDoesNotBelong:
+      value:
+        status: 403
+        error: Forbidden
+        message: This comment does not belong to you
+    error403ReplyDoesNotBelong:
+      value:
+        status: 403
+        error: Forbidden
+        message: This reply does not belong to you
+    error404U:
+      value:
+        status: 404
+        error: Not Found
+        message: No User with that ID
+    error404ContributionNotFound:
+      value:
+        status: 404
+        error: Not Found
+        message: No Contribution with that ID
+    error404CommentNotFound:
+      value:
+        status: 404
+        error: Not Found
+        message: No Comment with that ID
+    error404ReplyNotFound:
+      value:
+        status: 404
+        error: Not Found
+        message: No Reply with that ID
+    error404UserNotFound:
+      value:
+        status: 404
+        error: Not Found
+        message: No User with that API Key
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      name: X-API-KEY
+      in: header
