@@ -274,7 +274,7 @@ class BlogController extends AbstractController
      *
      * See https://symfony.com/doc/current/bundles/SensioFrameworkExtraBundle/annotations/converters.html#doctrine-converter
      */
-    #[Route('/comment/{postSlug}/new', methods: ['POST'], name: 'comment_new')]
+    #[Route('/posts/{postSlug}', methods: ['POST'], name: 'comment_new')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[ParamConverter('post', options: ['mapping' => ['postSlug' => 'slug']])]
     public function commentNew(Request $request, Post $post, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response
