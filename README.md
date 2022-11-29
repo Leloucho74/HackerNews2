@@ -1,4 +1,4 @@
-##Team Members
+Team Members
 
 Marc Clapés | marcclapes13 | marc.clapes.marana
 
@@ -6,5 +6,5 @@ Eric Hurtado | Leloucho74 | eric.hurtado
 
 Isaac Roma | isaacroma | isaacroma
 
-##Heroku
+Heroku
 http://arcane-reef-50644.herokuapp.com/es/
