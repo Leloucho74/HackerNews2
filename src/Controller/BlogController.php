@@ -198,7 +198,7 @@ class BlogController extends AbstractController
 
         return $this->redirectToRoute('blog_index');
     }
-    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post_newest')]
+    #[Route('/posts/{slug}/vote/newest', methods: ['GET'], name: 'vote_post_newest')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function postVote_new(Post $post,  EntityManagerInterface $entityManager): Response
     {
@@ -209,9 +209,9 @@ class BlogController extends AbstractController
 
         //dd($newPost);
 
-        return $this->redirectToRoute('blog_newest');
+        return $this->redirectToRoute('blog_newest_index');
     }
-    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post_ask')]
+    #[Route('/posts/{slug}/vote/ask', methods: ['GET'], name: 'vote_post_ask')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function postVote_ask(Post $post,  EntityManagerInterface $entityManager): Response
     {
@@ -239,7 +239,7 @@ class BlogController extends AbstractController
         //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
         return $this->redirectToRoute('blog_index');
     }
-    #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post_newest')]
+    #[Route('/posts/{slug}/unvote/newest', methods: ['GET'], name: 'unvote_post_newest')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function postunVote_new(Post $post,  EntityManagerInterface $entityManager): Response
     {
@@ -251,9 +251,9 @@ class BlogController extends AbstractController
 
         //dd($newPost);
         //return $this->redirectToRoute('blog_post', array('slug' => $post->getSlug()));
-        return $this->redirectToRoute('blog_newest');
+        return $this->redirectToRoute('blog_newest_index');
     }
-    #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post_ask')]
+    #[Route('/posts/{slug}/unvote/ask', methods: ['GET'], name: 'unvote_post_ask')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function postunVote_ask(Post $post,  EntityManagerInterface $entityManager): Response
     {
