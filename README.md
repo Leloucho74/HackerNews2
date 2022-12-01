@@ -8,3 +8,6 @@ Isaac Roma | isaacroma | isaacroma
 
 Heroku
 http://arcane-reef-50644.herokuapp.com/es/
+
+Taiga
+https://tree.taiga.io/project/erichurtado-aswhackernews/backlog
