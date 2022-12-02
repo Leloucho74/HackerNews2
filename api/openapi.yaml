@@ -43,6 +43,62 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Post'
+    post:
+      tags:
+      - blog
+      summary: Create a post
+      operationId: new
+      requestBody:
+        description: Attributes needed to create a post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_new_body'
+      responses:
+        "200":
+          description: New created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_new_body'
+        "201":
+          description: This new already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_new_body'
+        "400":
+          description: 'Error: Bad Request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                Error blank Title:
+                  $ref: '#/components/examples/error400TitleBlank'
+                Error invalid Url:
+                  $ref: '#/components/examples/error400InvalidUrl'
+                Error Url and Text are blank:
+                  $ref: '#/components/examples/error400UrlAndTextBlank'
+        "401":
+          description: 'Error: Unauthorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NoApiKey:
+                  $ref: '#/components/examples/error401'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ApiKeyNotValid:
+                  $ref: '#/components/examples/error403'
+                  
   /ask:
     get:
       tags:
@@ -75,61 +131,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Post'
-    post:
-      tags:
-      - blog
-      summary: Create a post
-      operationId: new
-      requestBody:
-        description: Attributes needed to create a post
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/post_new_body'
-      responses:
-        "200":
-          description: New with the URL that already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Post'
-        "201":
-          description: New created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Post'
-        "400":
-          description: 'Error: Bad Request'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResult'
-              examples:
-                Error blank Title:
-                  $ref: '#/components/examples/error400TitleBlank'
-                Error invalid Url:
-                  $ref: '#/components/examples/error400InvalidUrl'
-                Error Url and Text are blank:
-                  $ref: '#/components/examples/error400UrlAndTextBlank'
-        "401":
-          description: 'Error: Unauthorized'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResult'
-              examples:
-                NoApiKey:
-                  $ref: '#/components/examples/error401'
-        "403":
-          description: 'Error: Forbidden'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResult'
-              examples:
-                ApiKeyNotValid:
-                  $ref: '#/components/examples/error403'
+    
   /posts/{post}:
     get:
       tags:
@@ -144,7 +146,7 @@ paths:
         style: simple
         explode: false
         schema:
-          type: object
+          type: string
       responses:
         "200":
           description: Successful request
@@ -172,7 +174,7 @@ paths:
         style: simple
         explode: false
         schema:
-          type: object
+          type: string
       responses:
         "201":
           description: Post voted
@@ -200,7 +202,7 @@ paths:
         style: simple
         explode: false
         schema:
-          type: object
+          type: string
       responses:
         "201":
           description: Post unvoted
@@ -243,6 +245,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Comment'
+        "400":
+          description: 'Error: Bad Request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                Error blank Content:
+                  $ref: '#/components/examples/error400ContentBlank'
+        "401":
+          description: 'Error: Unauthorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                NoApiKey:
+                  $ref: '#/components/examples/error401'
+        "403":
+          description: 'Error: Forbidden'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ApiKeyNotValid:
+                  $ref: '#/components/examples/error403'
+        "404":
+          description: 'Error: Not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
+              examples:
+                ContributionNotFound:
+                  $ref: '#/components/examples/error404ContributionNotFound'
+  /comment/{id}:
+    post:
+      tags:
+      - blog
+      summary: Create a reply for a comment
+      operationId: replyNew
+      parameters:
+      - name: id
+        in: path
+        description: ID of the comment
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: integer
+      requestBody:
+        description: Attributes needed to create a post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/comment_id_body_1'
+        required: true
+      responses:
+        "201":
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reply'
         "400":
           description: 'Error: Bad Request'
           content:
@@ -661,6 +728,14 @@ components:
         email:
           type: string
           example: laura@gmail.com
+    comment_id_body_1:
+      required:
+      - Reply
+      type: object
+      properties:
+        content:
+          type: string
+          example: This is a content example
   examples:
     error400InvalidUrl:
       value:
