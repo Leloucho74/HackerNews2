@@ -98,6 +98,7 @@ class Post
     public function __construct()
     {
         $this->publishedAt = new DateTime();
+        $this->publishedAt->format("Y-m-d");
         $this->comments = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->votes = new ArrayCollection();
@@ -140,12 +141,14 @@ class Post
 
     public function getPublishedAt(): DateTime
     {
+        $this->publishedAt->format("Y-m-d");
         return $this->publishedAt;
     }
 
     public function setPublishedAt(DateTime $publishedAt): void
     {
         $this->publishedAt = $publishedAt;
+        $this->publishedAt->format("Y-m-d");
     }
 
     public function getAuthor(): ?User
