@@ -149,4 +149,129 @@ class BlogControllerApi extends AbstractController
             ], status: Response::HTTP_OK
         );
     }
+
+    #[Route('/newest', defaults: ['page' => '1', '_format' => 'html'], methods: ['GET'], name: 'blog_newest_index')]
+    public function newestPosts(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
+    {
+            $tag = null;
+            $key = null;
+            $newestsPosts = $posts->createQueryBuilder('p')
+                ->addSelect('a', 't')
+                ->innerJoin('p.author', 'a')
+                ->leftJoin('p.tags', 't')
+                ->where('p.link LIKE :t_'.$key)
+                ->setParameter('t_'.$key, '%'.$term.'%')
+                ->orderBy('p.publishedAt', 'DESC')
+            ;
+            return new JsonResponse(
+                [
+                    $newestwPosts->getQuery()->getArrayResult()
+                ], status: Response::HTTP_OK
+            );
+    }
+
+    #[Route('/post/new', methods: ['GET', 'POST'], name: 'post_new')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function new(Request $request, EntityManagerInterface $entityManager, PostRepository $postRepository): Response
+    {
+            $post = new Post();
+            $post->setAuthor($this->getUser());
+
+            // See https://symfony.com/doc/current/form/multiple_buttons.html
+            $form = $this->createForm(PostType::class, $post)
+                ->add('saveAndCreateNew', SubmitType::class);
+            $form->handleRequest($request);
+
+            if($post->getLink() != '*'){
+                $post->setType("url");
+
+                $exsistingPost = $postRepository->findOneBy(['link' => $post->getLink()]);
+
+                if($exsistingPost){
+                    //dd($exsistingPost);
+                    //return $this->redirectToRoute('blog_post');
+                    return new JsonResponse(
+                        [
+                            $post->getId(),
+                            $post->getAuthor(),
+                            $post->getPublishedAt(),
+                            $post->getTitle(),
+                            $post->getLink(),
+                            $post->getContent(),
+                        ], status: Response::HTTP_OK
+                    );
+                }
+
+            }
+            else{
+                $post->setType("ask");
+            }
+
+            if ($form->isSubmitted() && $form->isValid()) {
+
+                $entityManager->persist($post);
+                $entityManager->flush();
+
+                $this->addFlash('success', 'post.created_successfully');
+
+                if ($form->get('saveAndCreateNew')->isClicked()) {
+                    return new JsonResponse(
+                        [
+                            $post->getId(),
+                            $post->getAuthor(),
+                            $post->getPublishedAt(),
+                            $post->getTitle(),
+                            $post->getLink(),
+                            $post->getContent(),
+                            $post->getComments()
+                        ], status: Response::HTTP_OK
+                    );
+                }
+                return $this->redirectToRoute('blog_index');
+            }
+            return $this->render('admin/blog/new.html.twig', [
+                'post' => $post,
+                'form' => $form->createView(),
+            ]);
+    }
+
+    #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function postVote(Post $post,  EntityManagerInterface $entityManager): Response
+    {
+        $post->addVote($this->getUser());
+        //$post->addUserIdVotes($this->getUser()->getId());
+        $entityManager->persist($post);
+        $entityManager->flush();
+
+        //dd($newPost);
+
+        return new JsonResponse(
+            [
+                $post->getId(),
+                $post->getAuthor(),
+                $post->getPublishedAt(),
+                $post->getTitle(),
+                $post->getLink(),
+                $post->getContent(),
+                $post->getComments(),
+                $post->getNumberOfVotes()
+            ], status: Response::HTTP_OK
+        );
+    }
+
+    #[Route('/{id<\d+>}', methods: ['GET'], name: 'admin_post_show')]
+        public function show(Post $post): Response
+        {
+            // This security check can also be performed
+            // using a PHP attribute: #[IsGranted('show', subject: 'post', message: 'Posts can only be shown to their authors.')]
+            $this->denyAccessUnlessGranted(PostVoter::SHOW, $post, 'Posts can only be shown to their authors.');
+
+            return new JsonResponse(
+                [
+                    $post
+                ], status: Response::HTTP_OK
+            );
+        }
+    }
 }

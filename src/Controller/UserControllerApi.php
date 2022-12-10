@@ -25,4 +25,21 @@ class UserControllerApi extends AbstractController
             ], status: Response::HTTP_OK
         );
     }
+
+    #[Route('/show/{username}', methods: ['GET'], name: 'user_show')]
+    //    #[ParamConverter('user', options: ['mapping' => ['username' => 'username']])]
+        public function show(Request $request, UserRepository $userRepository, PostRepository $postRepository, CommentRepository $commentRepository, EntityManagerInterface $entityManager): Response
+        {
+
+            $user = $userRepository->findOneBy(["username" => $request->attributes->get("username")]);
+            $posts = $postRepository->findOneBy(["author" => $user]);
+            $comments = $commentRepository->findOneBy(["author" => $user]);
+            $user->posts = $posts;
+            $user->comments = $comments;
+            return new JsonResponse(
+                [
+                    $user
+                ], status: Response::HTTP_OK
+            );
+        }
 }
