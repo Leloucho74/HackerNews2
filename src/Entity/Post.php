@@ -87,7 +87,7 @@ class Post
     private ?string $type = 'ask';
 
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'votedPosts')]
-    private Collection $votes;
+    public Collection $votes;
 
     #[ORM\Column(type: 'json')]
     private array $userIdVotes = [];

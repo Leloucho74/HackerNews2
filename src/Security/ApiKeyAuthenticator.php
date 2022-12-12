@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-// src/Security/ApiKeyAuthenticator.php
+
 namespace App\Security;
 
 use App\Security\ApiKeyUserProvider;
