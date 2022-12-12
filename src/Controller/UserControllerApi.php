@@ -17,13 +17,22 @@ class UserControllerApi extends AbstractController
     public function edit(Request $request, EntityManagerInterface $entityManager): Response
     {
         $user = $this->getUser();
+        if ($user != null) {
+            $form = $this->createForm(UserType::class, $user);
+            $form->handleRequest($request);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'user.updated_successfully');
         return new JsonResponse(
             [
-                "Nombre de usuario" => $user->getUsername(),
+                "username" => $user->getUsername(),
                 "Nombre completo" => $user->getFullName(),
-                "Email" => $user->getEmail()
+                "email" => $user->getEmail()
             ], status: Response::HTTP_OK
-        );
+        );}
+        else return new JsonResponse([
+            "error, 404, User does not exist"
+        ], status: Response::HTTP_NOT_FOUND);
     }
 
     #[Route('/show/{username}', methods: ['GET'], name: 'user_show')]
