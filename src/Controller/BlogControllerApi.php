@@ -17,6 +17,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use PhpParser\JsonDecoder;
+use PhpParser\Node\Expr\Array_;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -235,6 +236,25 @@ class BlogControllerApi extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+    #[Route('/posts/{slug}', methods: ['GET'], name: 'blog_post')]
+    public function postShow(Post $post, CommentRepository $commentRepository): Response
+    {
+
+        return new JsonResponse(
+            [
+                $post->getTitle(),
+                $post->getLink(),
+                $post->getPublishedAt(),
+                $post->getNumberOfVotes(),
+                $post->getAuthor(),
+                $post->getContent(),
+                $post->getComments()->getValues(),
+
+
+            ], status: Response::HTTP_OK
+        );
+    }
+
 
     #[Route('/posts/{slug}/vote', methods: ['GET'], name: 'vote_post')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -262,13 +282,9 @@ class BlogControllerApi extends AbstractController
     }
     #[Route('/posts/{slug}/unvote', methods: ['GET'], name: 'unvote_post')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function postUnVote(Post $post,  EntityManagerInterface $entityManager, User $vote): Response
+    public function postUnVote(Post $post,  EntityManagerInterface $entityManager): Response
     {
-        if ($post->votes->contains($vote)) {
-            $post->votes->removeElement($vote);
-            $post->removeUserIdVotes($vote->getId());
-            $post->decrementNumberOfVotes();
-        }
+        $post->removeVote($this->getUser());
         //$post->addUserIdVotes($this->getUser()->getId());
         $entityManager->persist($post);
         $entityManager->flush();
