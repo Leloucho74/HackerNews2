@@ -6,6 +6,7 @@ use App\Form\UserType;
 use App\Repository\CommentRepository;
 use App\Repository\PostRepository;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -45,12 +46,19 @@ class UserControllerApi extends AbstractController
 
         $user = $userRepository->findOneBy(["username" => $request->attributes->get("username")]);
         $posts = $postRepository->findOneBy(["author" => $user]);
-        $comments = $commentRepository->findOneBy(["author" => $user]);
+        $comments = new ArrayCollection($commentRepository->findBy(['author' => $user, 'parentComment' => null]));
         $user->posts = $posts;
         $user->comments = $comments;
+        $arrayC = [];
+        for ($i = 0; $i < $comments->count(); ++$i) {
+            array_push($arrayC, $comments->get($i)->getContent());
+        }
         return new JsonResponse(
             [
-                $user
+                "username" => $user->getUsername(),
+                "Nombre completo" => $user->getFullName(),
+                "email" => $user->getEmail(),
+                "comments" => $arrayC
             ], status: Response::HTTP_OK
         );
     }

@@ -281,14 +281,13 @@ class BlogControllerApi extends AbstractController
 
         return new JsonResponse(
             [
-                $post->getId(),
-                $post->getAuthor(),
-                $post->getPublishedAt(),
-                $post->getTitle(),
-                $post->getLink(),
-                $post->getContent(),
-                $post->getComments(),
-                $post->getNumberOfVotes()
+                "postID" => $post->getId(),
+                "Author"=> $post->getAuthor(),
+                "publishedAt"=>$post->getPublishedAt(),
+                "Title"=>$post->getTitle(),
+                "Link"=>$post->getLink(),
+                "Content"=>$post->getContent(),
+                "NumberOfVotes"=>$post->getNumberOfVotes()
             ], status: Response::HTTP_OK
         );
     }
@@ -301,18 +300,18 @@ class BlogControllerApi extends AbstractController
         $entityManager->persist($post);
         $entityManager->flush();
 
+
         //dd($newPost);
 
         return new JsonResponse(
             [
-                $post->getId(),
-                $post->getAuthor(),
-                $post->getPublishedAt(),
-                $post->getTitle(),
-                $post->getLink(),
-                $post->getContent(),
-                $post->getComments(),
-                $post->getNumberOfVotes()
+                "postID" => $post->getId(),
+                "Author"=> $post->getAuthor(),
+                "publishedAt"=>$post->getPublishedAt(),
+                "Title"=>$post->getTitle(),
+                "Link"=>$post->getLink(),
+                "Content"=>$post->getContent(),
+                "NumberOfVotes"=>$post->getNumberOfVotes()
             ], status: Response::HTTP_OK
         );
     }
