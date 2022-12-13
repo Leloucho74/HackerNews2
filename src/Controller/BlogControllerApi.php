@@ -318,4 +318,18 @@ class BlogControllerApi extends AbstractController
             ], status: Response::HTTP_OK
         );
     }
+    #[Route('/comment/{postSlug}/new', methods: ['POST'], name: 'comment_new')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[ParamConverter('post', options: ['mapping' => ['postSlug' => 'slug']])]
+    public function commentNew(Request $request, Post $post, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response  {
+        $post ->addComment($request->attributes->get("content"));
+
+        return new JsonResponse(
+            [
+                "comment added successfully",
+                $request->attributes->get("content")
+            ], status: Response::HTTP_OK
+        );
+
+    }
 }
