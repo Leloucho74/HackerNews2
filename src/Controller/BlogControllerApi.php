@@ -8,6 +8,8 @@ use App\Entity\Post;
 use App\Entity\User;
 use App\Event\CommentCreatedEvent;
 use App\Form\CommentType;
+use App\Form\PostType;
+use App\Form\UserType;
 use App\Repository\CommentRepository;
 use App\Repository\PostRepository;
 use App\Repository\TagRepository;
@@ -20,8 +22,10 @@ use PhpParser\JsonDecoder;
 use PhpParser\Node\Expr\Array_;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Cache;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,7 +36,8 @@ use Symfony\Component\Validator\Constraints\DateTime;
 class BlogControllerApi extends AbstractController
 {
     #[Route('/', defaults: ['page' => '1'], methods: ['GET'], name: 'blog_index')]
-    public function index(Request $request, int $page, PostRepository $posts) {
+    public function index(Request $request, int $page, PostRepository $posts)
+    {
         $tag = null;
         $latestPost = $posts->createQueryBuilder('p')
             ->addSelect('a', 't')
@@ -40,8 +45,7 @@ class BlogControllerApi extends AbstractController
             ->leftJoin('p.tags', 't')
             ->where('p.publishedAt <= :now')
             ->orderBy('p.numberOfVotes', 'DESC')
-            ->setParameter('now', new \DateTimeImmutable(), Types::DATETIME_IMMUTABLE)
-        ;
+            ->setParameter('now', new \DateTimeImmutable(), Types::DATETIME_IMMUTABLE);
 
         return new JsonResponse(
             [
@@ -60,10 +64,9 @@ class BlogControllerApi extends AbstractController
             ->addSelect('a', 't')
             ->innerJoin('p.author', 'a')
             ->leftJoin('p.tags', 't')
-            ->where('p.link LIKE :t_'.$key)
-            ->setParameter('t_'.$key, '%'.$term.'%')
-            ->orderBy('p.publishedAt', 'DESC')
-        ;
+            ->where('p.link LIKE :t_' . $key)
+            ->setParameter('t_' . $key, '%' . $term . '%')
+            ->orderBy('p.publishedAt', 'DESC');
         return new JsonResponse(
             [
                 $latestPosts->getQuery()->getArrayResult()
@@ -77,7 +80,6 @@ class BlogControllerApi extends AbstractController
         $comment = new Comment();
         $comment->setAuthor($this->getUser());
         $comment->setPost($parentComment->getPost());
-
 
 
         $form = $this->createForm(CommentType::class, $comment);
@@ -96,11 +98,10 @@ class BlogControllerApi extends AbstractController
             // passed in the event and they can even modify the execution flow, so
             // there's no guarantee that the rest of this controller will be executed.
             // See https://symfony.com/doc/current/components/event_dispatcher.html
-            try{
+            try {
                 $eventDispatcher->dispatch(new CommentCreatedEvent($comment));
 
-            }
-            catch(Exception $e){
+            } catch (Exception $e) {
 
             }
 
@@ -163,8 +164,7 @@ class BlogControllerApi extends AbstractController
             ->leftJoin('p.tags', 't')
             ->where('p.publishedAt <= :now')
             ->orderBy('p.publishedAt', 'DESC')
-            ->setParameter('now', new \DateTimeImmutable(), Types::DATETIME_IMMUTABLE)
-        ;
+            ->setParameter('now', new \DateTimeImmutable(), Types::DATETIME_IMMUTABLE);
         return new JsonResponse(
             [
                 $newestsPosts->getQuery()->getArrayResult()
@@ -184,18 +184,18 @@ class BlogControllerApi extends AbstractController
             ->add('saveAndCreateNew', SubmitType::class);
         $form->handleRequest($request);
 
-        if($post->getLink() != '*'){
+        if ($post->getLink() != '*') {
             $post->setType("url");
 
             $exsistingPost = $postRepository->findOneBy(['link' => $post->getLink()]);
 
-            if($exsistingPost){
+            if ($exsistingPost) {
                 //dd($exsistingPost);
                 //return $this->redirectToRoute('blog_post');
                 return new JsonResponse(
                     [
                         $post->getId(),
-                        $post->getAuthor(),
+                        $post->getAuthor()->getUsername(),
                         $post->getPublishedAt(),
                         $post->getTitle(),
                         $post->getLink(),
@@ -204,8 +204,7 @@ class BlogControllerApi extends AbstractController
                 );
             }
 
-        }
-        else{
+        } else {
             $post->setType("ask");
         }
 
@@ -228,31 +227,44 @@ class BlogControllerApi extends AbstractController
                         $post->getComments()
                     ], status: Response::HTTP_OK
                 );
-            }
-            return $this->redirectToRoute('blog_index');
-        }
-        return $this->render('admin/blog/new.html.twig', [
-            'post' => $post,
-            'form' => $form->createView(),
-        ]);
+            } else return new JsonResponse([
+                "error, 404, Post does not exist"
+            ], status: Response::HTTP_NOT_FOUND);
+        } else return new JsonResponse(
+            [
+                $post->getId(),
+                $post->getAuthor(),
+                $post->getPublishedAt(),
+                $post->getTitle(),
+                $post->getLink(),
+                $post->getContent(),
+                $post->getComments()
+            ], status: Response::HTTP_OK
+        );
     }
     #[Route('/posts/{slug}', methods: ['GET'], name: 'blog_post')]
     public function postShow(Post $post, CommentRepository $commentRepository): Response
     {
-
-        return new JsonResponse(
-            [
-                $post->getTitle(),
-                $post->getLink(),
-                $post->getPublishedAt(),
-                $post->getNumberOfVotes(),
-                $post->getAuthor(),
-                $post->getContent(),
-                $post->getComments()->getValues(),
-
-
-            ], status: Response::HTTP_OK
-        );
+        if ($post != null) {
+            $comments = new ArrayCollection($commentRepository->findBy(['post' => $post, 'parentComment' => null]));
+            $arrayC = [];
+            for ($i = 0; $i < $comments->count(); ++$i) {
+                array_push($arrayC, $comments->get($i)->getContent());
+            }
+            return new JsonResponse(
+                [
+                    "Title" => $post->getTitle(),
+                    "URL" => $post->getLink(),
+                    "Date" => $post->getPublishedAt(),
+                    "Votes" => $post->getNumberOfVotes(),
+                    "Author" => $post->getAuthor()->getUsername(),
+                    "Content" => $post->getContent(),
+                    "Comments" => $arrayC
+                ], status: Response::HTTP_OK
+            );}
+        else return new JsonResponse([
+            "error, 404, Post does not exist"
+        ], status: Response::HTTP_NOT_FOUND);
     }
 
 
@@ -304,32 +316,25 @@ class BlogControllerApi extends AbstractController
             ], status: Response::HTTP_OK
         );
     }
-
-    #[Route('/{id<\d+>}', methods: ['GET'], name: 'admin_post_show')]
-    public function show(Post $post): Response
-    {
-        // This security check can also be performed
-        // using a PHP attribute: #[IsGranted('show', subject: 'post', message: 'Posts can only be shown to their authors.')]
-        $this->denyAccessUnlessGranted(PostVoter::SHOW, $post, 'Posts can only be shown to their authors.');
-
-        return new JsonResponse(
-            [
-                $post
-            ], status: Response::HTTP_OK
-        );
-    }
-    #[Route('/comment/{postSlug}/new', methods: ['POST'], name: 'comment_new')]
+    #[Route('/comment/{postSlug}/new', methods: ['GET','POST'], name: 'comment_new')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[ParamConverter('post', options: ['mapping' => ['postSlug' => 'slug']])]
-    public function commentNew(Request $request, Post $post, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response  {
-        $post ->addComment($request->attributes->get("content"));
+    public function commentNew(Request $request, Post $post, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response {
+        $user = $this->getUser();
+        if ($user != null) {
+            $post->addComment($request->get("content"));
+            $form = $this->createForm(CommentType::class, $request);
+            $form->handleRequest($request);
+            $entityManager->flush();
 
-        return new JsonResponse(
-            [
-                "comment added successfully",
-                $request->attributes->get("content")
-            ], status: Response::HTTP_OK
-        );
-
+            $this->addFlash('success', 'comment.added_successfully');
+            return new JsonResponse(
+                [
+                    "comment" => $request->get("content")
+                ], status: Response::HTTP_OK
+            );}
+        else return new JsonResponse([
+            "error, 404, User does not exist"
+        ], status: Response::HTTP_NOT_FOUND);
     }
 }

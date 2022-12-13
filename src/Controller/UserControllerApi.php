@@ -3,6 +3,9 @@
 namespace App\Controller;
 
 use App\Form\UserType;
+use App\Repository\CommentRepository;
+use App\Repository\PostRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,29 +20,38 @@ class UserControllerApi extends AbstractController
     public function edit(Request $request, EntityManagerInterface $entityManager): Response
     {
         $user = $this->getUser();
-        return new JsonResponse(
-            [
-                "Nombre de usuario" => $user->getUsername(),
-                "Nombre completo" => $user->getFullName(),
-                "Email" => $user->getEmail()
-            ], status: Response::HTTP_OK
-        );
+        if ($user != null) {
+            $form = $this->createForm(UserType::class, $user);
+            $form->handleRequest($request);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'user.updated_successfully');
+            return new JsonResponse(
+                [
+                    "username" => $user->getUsername(),
+                    "Nombre completo" => $user->getFullName(),
+                    "email" => $user->getEmail()
+                ], status: Response::HTTP_OK
+            );}
+        else return new JsonResponse([
+            "error, 404, User does not exist"
+        ], status: Response::HTTP_NOT_FOUND);
     }
 
     #[Route('/show/{username}', methods: ['GET'], name: 'user_show')]
     //    #[ParamConverter('user', options: ['mapping' => ['username' => 'username']])]
-        public function show(Request $request, UserRepository $userRepository, PostRepository $postRepository, CommentRepository $commentRepository, EntityManagerInterface $entityManager): Response
-        {
+    public function show(Request $request, UserRepository $userRepository, PostRepository $postRepository, CommentRepository $commentRepository, EntityManagerInterface $entityManager): Response
+    {
 
-            $user = $userRepository->findOneBy(["username" => $request->attributes->get("username")]);
-            $posts = $postRepository->findOneBy(["author" => $user]);
-            $comments = $commentRepository->findOneBy(["author" => $user]);
-            $user->posts = $posts;
-            $user->comments = $comments;
-            return new JsonResponse(
-                [
-                    $user
-                ], status: Response::HTTP_OK
-            );
-        }
+        $user = $userRepository->findOneBy(["username" => $request->attributes->get("username")]);
+        $posts = $postRepository->findOneBy(["author" => $user]);
+        $comments = $commentRepository->findOneBy(["author" => $user]);
+        $user->posts = $posts;
+        $user->comments = $comments;
+        return new JsonResponse(
+            [
+                $user
+            ], status: Response::HTTP_OK
+        );
+    }
 }
