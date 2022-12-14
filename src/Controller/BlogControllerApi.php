@@ -32,7 +32,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Constraints\DateTime;
 
-#[Route('/api')]
+#[Route('/')]
 class BlogControllerApi extends AbstractController
 {
     #[Route('/', defaults: ['page' => '1'], methods: ['GET'], name: 'blog_index')]
